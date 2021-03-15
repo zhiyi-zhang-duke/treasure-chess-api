@@ -1,31 +1,42 @@
 from flask import Flask, request, make_response, jsonify
+from flask_cors import CORS
 from flask_restful import Api, Resource
-from openings import Openings
-from players import Players
-from games import Games
-from puzzles import Puzzles
+from database.db import initialize_db
+from resources.routes import initialize_routes
+from games_loader import GamesLoader
+from openings_loader import OpeningsLoader
+
 
 app = Flask(__name__)
+CORS(app)
 api = Api(app)
+app.config['MONGODB_SETTINGS'] = {
+    'host': 'mongodb://localhost/treasure-chess'
+}
 
-@app.errorhandler(400)
-def not_found(error):
-    return make_response(jsonify( { 'error': 'Bad request' } ), 400)
+# Previous routes I had
+# api.add_resource(Openings, '/openings')
 
-@app.errorhandler(404)
-def not_found(error):
-    return make_response(jsonify( { 'error': 'Not found' } ), 404)
+# # @app.route('/players', methods = ['GET'])
+# api.add_resource(Players, '/players')
 
-api.add_resource(Openings, '/openings')
+# # @app.route('/puzzles', methods = ['GET'])
+# api.add_resource(Puzzles, '/puzzles')
 
-# @app.route('/players', methods = ['GET'])
-api.add_resource(Players, '/players')
+# # @app.route('/games', methods = ['GET'])
+# api.add_resource(Games, '/games')
 
-# @app.route('/puzzles', methods = ['GET'])
-api.add_resource(Puzzles, '/puzzles')
+initialize_db(app)
+initialize_routes(api)
 
-# @app.route('/games', methods = ['GET'])
-api.add_resource(Games, '/games')
 
 if __name__ == "__main__":
+    #To do: Change this to load new game document
+    #Maybe try static data first
+    gl = GamesLoader("./data/games/")
+    gl.loadDB()
+
+    ol = OpeningsLoader("./data/openings/")
+    ol.loadDB()
+
     app.run(port=5000)
